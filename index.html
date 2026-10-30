@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Nexform: Spatial worlds</title>
+  <meta name="description" content="Procedural systems for immersive visual forms. Computational design. Dynamic interfaces.">
+  <meta name="theme-color" content="#0018a8">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+
+  <script>
+    // Entrances only hide content once we know script runs, and never for more than a moment.
+    document.documentElement.classList.add('js');
+    setTimeout(function () { document.documentElement.classList.add('is-in'); }, 600);
+  </script>
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"
+      }
+    }
+  </script>
+  <script src="hero.js" defer></script>
+  <script src="cat-data.js" defer></script>
+  <script src="world.js" defer></script>
+</head>
+<body>
+  <div class="scene" id="top">
+    <header class="hero">
+      <div class="hero__shadow" aria-hidden="true"></div>
+
+      <nav class="top rise" aria-label="Main">
+        <div class="top__left">
+          <a class="brand" href="#top" aria-label="Nexform, home"><span>Nex</span><span>form<sup>®</sup></span></a>
+          <span class="top__rule" aria-hidden="true"></span>
+          <a class="top__link" href="#studios">Studios</a>
+        </div>
+        <a class="top__link top__mid" href="#labs">Labs</a>
+        <button class="menu-btn" type="button" aria-expanded="false" aria-controls="menu" aria-label="Open menu"><span></span></button>
+      </nav>
+
+      <div class="lede lede--left rise" style="--i:1">
+        <p>Procedural systems for<br> immersive visual forms.</p>
+        <a class="arrow" href="#case-study" aria-label="View case study">
+          <svg viewBox="0 0 52 14" aria-hidden="true" focusable="false"><path d="M0 7h50M44 1l6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
+        </a>
+      </div>
+
+      <p class="lede lede--right rise" style="--i:2">Computational design.<br> Dynamic interfaces.</p>
+
+      <div class="foot">
+        <div class="meta rise" style="--i:3">
+          <p class="meta__index" aria-hidden="true"><span id="frame">01</span> / 72</p>
+          <p class="meta__tags">3D, Interaction, Visual systems</p>
+        </div>
+        <h1 class="title rise" style="--i:4"><span>Spatial</span> <span>Worlds</span></h1>
+      </div>
+
+      <button class="badge rise" style="--i:5" type="button" aria-label="Scroll to watch the cat become a world">
+        <svg class="badge__ring" viewBox="0 0 100 100" aria-hidden="true" focusable="false">
+          <defs><path id="badge-path" d="M50 50 m-35 0 a35 35 0 1 1 70 0 a35 35 0 1 1 -70 0"/></defs>
+          <text><textPath href="#badge-path" textLength="218" lengthAdjust="spacing">SCROLL • SCROLL • SCROLL • </textPath></text>
+        </svg>
+        <span class="badge__dot" aria-hidden="true"></span>
+      </button>
+
+      <!-- The cat draws above the words, so it sits in front of the title. -->
+      <div class="hero__world" id="world" aria-hidden="true"></div>
+    </header>
+  </div>
+
+  <div class="menu" id="menu" role="dialog" aria-modal="true" aria-label="Menu" data-open="false" inert>
+    <div class="menu__top">
+      <a class="brand" href="#top" aria-label="Nexform, home"><span>Nex</span><span>form<sup>®</sup></span></a>
+      <button class="menu-btn menu-btn--close" type="button" aria-label="Close menu"><span></span></button>
+    </div>
+    <nav class="menu__links" aria-label="Menu">
+      <a href="#studios">Studios</a>
+      <a href="#labs">Labs</a>
+      <a href="#case-study">Case study</a>
+    </nav>
+    <p class="meta__tags">3D, Interaction, Visual systems</p>
+  </div>
+</body>
+</html>

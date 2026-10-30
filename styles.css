@@ -1,0 +1,417 @@
+/* Nexform hero: deep cobalt that glows lighter behind the cat, white Montserrat, the cat in front. */
+
+:root {
+  --bg: #0018a8;
+  --bg-mid: #0d2bc4;
+  --bg-light: #2e4ce8;
+  --bg-deep: #00118a;
+  --ink: #ffffff;
+
+  --font: "Montserrat", "Helvetica Neue", Arial, sans-serif;
+
+  --margin: clamp(20px, 4.6vw, 80px);
+  --gutter: clamp(12px, 1.6vw, 28px);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+*,
+*::before,
+*::after { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font);
+  -webkit-font-smoothing: antialiased;
+}
+
+p { margin: 0; }
+a { color: inherit; }
+
+::selection { background: var(--ink); color: var(--bg); }
+
+:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 4px;
+}
+
+/* ---------- The pinned stage: the hero holds while the scene scrolls past ---------- */
+
+.scene {
+  position: relative;
+  height: 260svh;
+}
+
+.hero {
+  position: sticky;
+  top: 0;
+  height: 100svh;
+  min-height: 560px;
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  grid-template-rows: auto clamp(32px, 8.5svh, 92px) auto 1fr auto;
+  column-gap: var(--gutter);
+  padding: clamp(18px, 3.6svh, 40px) var(--margin) clamp(24px, 6.5svh, 66px);
+  overflow: clip;
+  /* The blue lifts towards the middle, where the cat floats, and deepens at the corners. */
+  background:
+    radial-gradient(ellipse 60% 66% at 52% 44%, var(--bg-light) 0%, var(--bg-mid) 38%, var(--bg) 70%, var(--bg-deep) 100%);
+}
+
+.hero__world {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.hero__world canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.hero__shadow {
+  position: absolute;
+  z-index: 0;
+  left: 52%;
+  top: 80%;
+  width: 28vw;
+  height: 4vw;
+  transform: translate(-50%, -50%);
+  /* The glowing cat lights the floor beneath it rather than shading it. */
+  background: radial-gradient(closest-side, rgba(255, 170, 90, 0.32), rgba(255, 170, 90, 0));
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* ---------- Top bar: lined up with the twelve columns ---------- */
+
+.top {
+  grid-column: 1 / -1;
+  grid-row: 1;
+  position: relative;
+  z-index: 3;
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  grid-template-columns: subgrid;
+  align-items: center;
+}
+
+.top__left {
+  grid-column: 1 / span 6;
+  display: flex;
+  align-items: center;
+  gap: clamp(14px, 1.6vw, 24px);
+}
+
+.brand {
+  display: grid;
+  font-size: clamp(11px, 0.78vw, 13px);
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  text-decoration: none;
+}
+
+.brand sup {
+  font-size: 0.6em;
+  vertical-align: top;
+}
+
+.top__rule {
+  width: clamp(24px, 2.2vw, 38px);
+  height: 1.5px;
+  background: currentColor;
+}
+
+.top__link {
+  font-size: clamp(11px, 0.78vw, 13px);
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  text-decoration: underline 1.5px;
+  text-decoration-color: transparent;
+  text-underline-offset: 7px;
+  transition: text-decoration-color 0.2s, text-underline-offset 0.25s var(--ease-out);
+}
+
+.top__link:hover {
+  text-decoration-color: currentColor;
+  text-underline-offset: 4px;
+}
+
+.top__mid { grid-column: 9 / span 2; justify-self: start; }
+
+.menu-btn {
+  grid-column: 12;
+  justify-self: end;
+  position: relative;
+  width: 40px;
+  height: 40px;
+  margin-right: -10px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+  transition: transform 0.3s var(--ease-out);
+}
+
+.menu-btn span,
+.menu-btn span::before {
+  position: absolute;
+  width: 18px;
+  height: 1.5px;
+  background: currentColor;
+  content: "";
+  transition: transform 0.3s var(--ease-out);
+}
+
+.menu-btn span {
+  top: 50%;
+  left: 50%;
+  margin: -4px 0 0 -9px;
+}
+
+.menu-btn span::before { top: 7px; left: 0; }
+
+.menu-btn:active { transform: scale(0.92); }
+
+/* ---------- Lines at the top corners ---------- */
+
+.lede {
+  grid-row: 3;
+  position: relative;
+  z-index: 1;
+  font-size: clamp(14px, 1.15vw, 20px);
+  font-weight: 700;
+  line-height: 1.3;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  will-change: transform, opacity;
+}
+
+.lede--left { grid-column: 1 / span 4; }
+
+.lede--right {
+  grid-column: 9 / span 4;
+  justify-self: end;
+  text-align: right;
+}
+
+.arrow {
+  display: inline-block;
+  width: clamp(40px, 3.2vw, 54px);
+  margin-top: clamp(16px, 3.4svh, 34px);
+  transition: transform 0.3s var(--ease-out);
+}
+
+.arrow svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* ---------- Bottom left: the index, the tags and the title ---------- */
+
+.foot {
+  grid-column: 1 / span 8;
+  grid-row: 5;
+  position: relative;
+  z-index: 1;
+}
+
+.meta {
+  display: flex;
+  gap: clamp(40px, 7.2vw, 124px);
+  margin-bottom: clamp(10px, 1.8svh, 18px);
+}
+
+.meta__index,
+.meta__tags {
+  font-size: clamp(10px, 0.7vw, 12px);
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.meta__index { font-variant-numeric: tabular-nums; }
+
+.title {
+  margin: 0;
+  font-size: clamp(48px, 7.2vw, 136px);
+  font-weight: 800;
+  line-height: 0.92;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+}
+
+.title span { display: block; }
+
+/* ---------- The scroll badge ---------- */
+
+.badge {
+  position: absolute;
+  right: var(--margin);
+  bottom: clamp(24px, 6.5svh, 66px);
+  z-index: 3;
+  width: clamp(76px, 7.2vw, 124px);
+  aspect-ratio: 1;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--ink);
+  color: var(--bg);
+  cursor: pointer;
+}
+
+.badge__ring {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  font-family: var(--font);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  fill: currentColor;
+  transform-origin: 50% 50%;
+  will-change: transform;
+}
+
+.badge__dot {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 22%;
+  height: 22%;
+  border-radius: 50%;
+  background: currentColor;
+  transform: translate(-50%, -50%);
+  transition: transform 0.3s var(--ease-out);
+}
+
+/* ---------- Menu: opens as a circle from the button ---------- */
+
+.menu {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  gap: 32px;
+  padding: clamp(18px, 3.6svh, 40px) var(--margin) clamp(24px, 6.5svh, 66px);
+  background:
+    radial-gradient(ellipse 60% 66% at 52% 44%, var(--bg-light) 0%, var(--bg-mid) 38%, var(--bg) 70%, var(--bg-deep) 100%);
+  color: var(--ink);
+  clip-path: circle(0px at var(--mx, 95%) var(--my, 5%));
+  visibility: hidden;
+  transition: clip-path 0.7s var(--ease-out), visibility 0s linear 0.7s;
+}
+
+.menu[data-open="true"] {
+  clip-path: circle(150vmax at var(--mx, 95%) var(--my, 5%));
+  visibility: visible;
+  transition: clip-path 0.7s var(--ease-out);
+}
+
+.menu__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.menu-btn--close span { background: transparent; margin-top: -0.75px; }
+.menu-btn--close span::before,
+.menu-btn--close span::after {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 18px;
+  height: 1.5px;
+  background: currentColor;
+  content: "";
+}
+.menu-btn--close span::before { transform: rotate(45deg); }
+.menu-btn--close span::after { transform: rotate(-45deg); }
+
+.menu__links {
+  align-self: end;
+  display: grid;
+  justify-items: start;
+}
+
+.menu__links a {
+  font-size: clamp(48px, 8.4vw, 150px);
+  font-weight: 800;
+  line-height: 0.95;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+  text-decoration: none;
+  transition: transform 0.35s var(--ease-out), opacity 0.2s;
+}
+
+/* ---------- Hover, only where there is a pointer that hovers ---------- */
+
+@media (hover: hover) {
+  .arrow:hover { transform: translateX(8px); }
+  .badge:hover .badge__dot { transform: translate(-50%, -50%) scale(1.35); }
+  .menu__links a:hover { transform: translateX(14px); }
+  .menu__links:hover a:not(:hover) { opacity: 0.55; }
+}
+
+/* ---------- Entrances ---------- */
+
+.js .rise {
+  opacity: 0;
+  transform: translateY(26px);
+}
+
+.js .top.rise { transform: translateY(-14px); }
+
+.js.is-in .rise {
+  opacity: 1;
+  transform: none;
+  transition:
+    opacity 0.8s var(--ease-out) calc(var(--i, 0) * 90ms),
+    transform 1.1s var(--ease-out) calc(var(--i, 0) * 90ms);
+}
+
+/* ---------- Phone ---------- */
+
+@media (max-width: 700px) {
+  .scene { height: 230svh; }
+
+  .hero { grid-template-rows: auto 28px auto 1fr auto; }
+
+  .top__left { grid-column: 1 / span 9; }
+  .top__mid { display: none; }
+
+  .lede { font-size: 12px; }
+  .lede--left { grid-column: 1 / span 7; }
+  .lede--right { grid-column: 8 / -1; }
+
+  .foot { grid-column: 1 / -1; }
+  .meta { gap: 28px; }
+  .title { font-size: clamp(44px, 14vw, 72px); }
+}
+
+/* ---------- Reduced motion: no pin, no travel ---------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .scene { height: auto; }
+
+  .js .rise,
+  .js.is-in .rise { transform: none; }
+
+  .arrow:hover,
+  .menu__links a:hover { transform: none; }
+
+  .menu,
+  .menu[data-open="true"] { transition: visibility 0s; }
+}

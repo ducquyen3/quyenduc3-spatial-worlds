@@ -1,0 +1,426 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Bake the hero cat</title>
+  <style>
+    :root {
+      --bg: #0d0d0d;
+      --panel: #171716;
+      --text: #f2f2f2;
+      --muted: #a8a49f;
+      --accent: #ff7a18;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
+    }
+
+    header,
+    main { padding: 24px clamp(16px, 3vw, 40px); }
+
+    header { padding-bottom: 0; }
+    h1 { margin: 0 0 4px; font-size: 22px; }
+    h2 { margin: 0 0 12px; font-size: 16px; }
+    p { margin: 0 0 12px; color: var(--muted); max-width: 70ch; }
+
+    main {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr));
+      gap: 24px;
+    }
+
+    section {
+      padding: 20px;
+      background: var(--panel);
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: auto;
+      margin: 12px 0;
+      background: #262624;
+    }
+
+    #source { cursor: crosshair; }
+    #preview { background: var(--accent); }
+
+    .controls {
+      display: grid;
+      gap: 10px;
+    }
+
+    .row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+    }
+
+    label { display: grid; gap: 4px; color: var(--muted); }
+    label.inline { display: flex; align-items: center; gap: 8px; }
+
+    button {
+      min-height: 40px;
+      padding: 0 16px;
+      border: 0;
+      background: #2c2c2a;
+      color: var(--text);
+      font: inherit;
+      cursor: pointer;
+    }
+
+    button:hover { background: #3a3a37; }
+
+    button.primary {
+      background: var(--accent);
+      color: #0d0d0d;
+      font-weight: 600;
+    }
+
+    button:disabled { opacity: 0.4; cursor: default; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Bake the hero cat</h1>
+    <p>Turns a picture of a cat into the spheres the hero draws. Pick the picture, check the cut-out, then download
+      <code>cat-data.js</code> and put it next to <code>index.html</code>, replacing the old one. Everything happens in
+      this page; nothing is uploaded.</p>
+  </header>
+
+  <main>
+    <section>
+      <h2>1. The picture</h2>
+      <div class="controls">
+        <input type="file" id="file" accept="image/*">
+        <canvas id="source" width="800" height="450"></canvas>
+        <p>A plain background is removed by its colour: raise the tolerance until only the cat is left. On a busy
+          background, set the tolerance to 0 and click round the cat to draw its outline instead.</p>
+        <div class="row">
+          <button type="button" id="undo">Undo point</button>
+          <button type="button" id="clear">Clear outline</button>
+          <label class="inline"><input type="checkbox" id="largest"> Keep only the largest piece</label>
+        </div>
+        <label>Background tolerance: <output id="tolOut">120</output>
+          <input type="range" id="tol" min="0" max="220" value="120">
+        </label>
+        <label>Rows of spheres: <output id="rowsOut">120</output>
+          <input type="range" id="rows" min="60" max="180" value="120">
+        </label>
+      </div>
+    </section>
+
+    <section>
+      <h2>2. The spheres</h2>
+      <canvas id="preview" width="600" height="600"></canvas>
+      <p id="stats">Pick a picture to start.</p>
+      <button type="button" class="primary" id="download" disabled>Download cat-data.js</button>
+    </section>
+  </main>
+
+  <script>
+    (() => {
+      const WORK = 1400; // longest side of the working copy, in pixels
+      const $ = (id) => document.getElementById(id);
+      const source = $('source');
+      const preview = $('preview');
+
+      let pic = null; // { canvas, data, w, h, scale, name }
+      let outline = []; // points in working pixels
+      let baked = null;
+
+      // ---------- Loading ----------
+      $('file').addEventListener('change', () => {
+        const f = $('file').files[0];
+        if (!f) return;
+        const reader = new FileReader();
+        reader.onload = () => {
+          const im = new Image();
+          im.onload = () => load(im, f.name);
+          im.src = reader.result;
+        };
+        reader.readAsDataURL(f);
+      });
+
+      function load(im, name) {
+        const scale = Math.min(1, WORK / Math.max(im.naturalWidth, im.naturalHeight));
+        const w = Math.round(im.naturalWidth * scale);
+        const h = Math.round(im.naturalHeight * scale);
+        const c = document.createElement('canvas');
+        c.width = w;
+        c.height = h;
+        const g = c.getContext('2d', { willReadFrequently: true });
+        g.drawImage(im, 0, 0, w, h);
+        pic = { canvas: c, data: g.getImageData(0, 0, w, h).data, w, h, scale, name };
+        outline = [];
+        source.width = w;
+        source.height = h;
+        run();
+      }
+
+      // ---------- Outline ----------
+      source.addEventListener('click', (e) => {
+        if (!pic) return;
+        const r = source.getBoundingClientRect();
+        outline.push([((e.clientX - r.left) / r.width) * pic.w, ((e.clientY - r.top) / r.height) * pic.h]);
+        run();
+      });
+      $('undo').addEventListener('click', () => { outline.pop(); run(); });
+      $('clear').addEventListener('click', () => { outline = []; run(); });
+      for (const id of ['largest', 'tol', 'rows']) $(id).addEventListener('input', run);
+
+      // ---------- Mask: which working pixels belong to the cat ----------
+      function cutOut() {
+        const { w, h, data } = pic;
+        const mask = new Uint8Array(w * h).fill(1);
+
+        if (outline.length >= 3) {
+          const c = document.createElement('canvas');
+          c.width = w;
+          c.height = h;
+          const g = c.getContext('2d', { willReadFrequently: true });
+          g.beginPath();
+          outline.forEach(([x, y], i) => (i ? g.lineTo(x, y) : g.moveTo(x, y)));
+          g.closePath();
+          g.fill();
+          const a = g.getImageData(0, 0, w, h).data;
+          for (let i = 0; i < w * h; i++) mask[i] = a[i * 4 + 3] > 127 ? 1 : 0;
+        }
+
+        // The average colour round the border is the background; anything close to it goes.
+        const tol = Number($('tol').value);
+        if (tol > 0) {
+          let r = 0, g = 0, b = 0, n = 0;
+          const sample = (i) => { r += data[i * 4]; g += data[i * 4 + 1]; b += data[i * 4 + 2]; n++; };
+          for (let x = 0; x < w; x++) { sample(x); sample((h - 1) * w + x); }
+          for (let y = 0; y < h; y++) { sample(y * w); sample(y * w + w - 1); }
+          r /= n; g /= n; b /= n;
+          for (let i = 0; i < w * h; i++) {
+            if (Math.hypot(data[i * 4] - r, data[i * 4 + 1] - g, data[i * 4 + 2] - b) < tol) mask[i] = 0;
+          }
+        }
+
+        return $('largest').checked ? keepLargest(mask, w, h) : mask;
+      }
+
+      function keepLargest(mask, w, h) {
+        const label = new Int32Array(w * h);
+        const queue = new Int32Array(w * h);
+        let best = 0, bestSize = 0, next = 0;
+        for (let s = 0; s < w * h; s++) {
+          if (!mask[s] || label[s]) continue;
+          next++;
+          let head = 0, tail = 0, size = 0;
+          label[s] = next;
+          queue[tail++] = s;
+          while (head < tail) {
+            const i = queue[head++];
+            size++;
+            const x = i % w;
+            for (const j of [x > 0 ? i - 1 : -1, x < w - 1 ? i + 1 : -1, i - w, i + w]) {
+              if (j >= 0 && j < w * h && mask[j] && !label[j]) { label[j] = next; queue[tail++] = j; }
+            }
+          }
+          if (size > bestSize) { bestSize = size; best = next; }
+        }
+        for (let i = 0; i < w * h; i++) mask[i] = label[i] === best ? 1 : 0;
+        return mask;
+      }
+
+      // ---------- Spheres: one per grid cell that is mostly cat ----------
+      function bake(mask) {
+        const { w, h, data } = pic;
+        let x0 = w, y0 = h, x1 = -1, y1 = -1;
+        for (let y = 0; y < h; y++) {
+          for (let x = 0; x < w; x++) {
+            if (!mask[y * w + x]) continue;
+            if (x < x0) x0 = x;
+            if (x > x1) x1 = x;
+            if (y < y0) y0 = y;
+            if (y > y1) y1 = y;
+          }
+        }
+        if (x1 < 0) return null;
+
+        let rows = Number($('rows').value);
+        let cell = (y1 - y0 + 1) / rows;
+        let cols = Math.ceil((x1 - x0 + 1) / cell);
+        if (cols > 255) {
+          cell = (x1 - x0 + 1) / 255;
+          cols = 255;
+          rows = Math.ceil((y1 - y0 + 1) / cell);
+        }
+
+        const inside = new Uint8Array(cols * rows);
+        const lum = new Float32Array(cols * rows);
+        for (let r = 0; r < rows; r++) {
+          for (let c = 0; c < cols; c++) {
+            const ax = Math.floor(x0 + c * cell), bx = Math.min(w, Math.floor(x0 + (c + 1) * cell));
+            const ay = Math.floor(y0 + r * cell), by = Math.min(h, Math.floor(y0 + (r + 1) * cell));
+            let all = 0, cat = 0, sum = 0;
+            for (let y = ay; y < Math.max(by, ay + 1); y++) {
+              for (let x = ax; x < Math.max(bx, ax + 1); x++) {
+                const i = y * w + x;
+                all++;
+                if (!mask[i]) continue;
+                cat++;
+                sum += 0.2126 * data[i * 4] + 0.7152 * data[i * 4 + 1] + 0.0722 * data[i * 4 + 2];
+              }
+            }
+            if (cat / all >= 0.45) {
+              inside[r * cols + c] = 1;
+              lum[r * cols + c] = sum / cat;
+            }
+          }
+        }
+
+        // Distance from the edge, in cells, for the puffed-out depth and the ragged rim.
+        const edge = new Int32Array(cols * rows).fill(-1);
+        const queue = [];
+        for (let i = 0; i < cols * rows; i++) {
+          if (!inside[i]) { edge[i] = 0; queue.push(i); }
+        }
+        const offFrame = (r, c) => r < 0 || c < 0 || r >= rows || c >= cols;
+        for (let r = 0; r < rows; r++) {
+          for (let c = 0; c < cols; c++) {
+            const i = r * cols + c;
+            if (inside[i] && [[r - 1, c], [r + 1, c], [r, c - 1], [r, c + 1]].some(([a, b]) => offFrame(a, b))) {
+              edge[i] = 1;
+              queue.push(i);
+            }
+          }
+        }
+        for (let q = 0; q < queue.length; q++) {
+          const i = queue[q];
+          const r = Math.floor(i / cols), c = i % cols;
+          for (const [a, b] of [[r - 1, c], [r + 1, c], [r, c - 1], [r, c + 1]]) {
+            if (offFrame(a, b)) continue;
+            const j = a * cols + b;
+            if (edge[j] < 0) { edge[j] = edge[i] + 1; queue.push(j); }
+          }
+        }
+
+        // Stretch the light and dark so any picture uses the full range.
+        const values = [];
+        for (let i = 0; i < cols * rows; i++) if (inside[i]) values.push(lum[i]);
+        values.sort((a, b) => a - b);
+        const lo = values[Math.floor(values.length * 0.02)];
+        const hi = values[Math.floor(values.length * 0.98)];
+        const deepest = Math.max(1, ...edge);
+
+        const bytes = [];
+        for (let r = 0; r < rows; r++) {
+          for (let c = 0; c < cols; c++) {
+            const i = r * cols + c;
+            if (!inside[i]) continue;
+            const shade = Math.min(1, Math.max(0, (lum[i] - lo) / Math.max(1, hi - lo)));
+            const depth = Math.sqrt(Math.min(1, edge[i] / (deepest * 0.6)));
+            bytes.push(c, r, Math.round(depth * 255), Math.round(shade * 255), Math.min(255, edge[i]));
+          }
+        }
+        return { cols, rows, bytes, count: bytes.length / 5 };
+      }
+
+      function write(b) {
+        let bin = '';
+        for (const v of b.bytes) bin += String.fromCharCode(v);
+        return [
+          `// The cat in the Nexform hero, baked with tools/bake-cat.html from ${pic.name}.`,
+          '// One sphere per five bytes: column, row, depth, shade, distance from the edge.',
+          `window.NEXFORM_CAT = ${JSON.stringify({ cols: b.cols, rows: b.rows, data: btoa(bin) })};`,
+          '',
+        ].join('\n');
+      }
+
+      // ---------- Drawing ----------
+      function drawSource(mask) {
+        const g = source.getContext('2d');
+        const { w, h } = pic;
+        g.drawImage(pic.canvas, 0, 0);
+        const shown = g.getImageData(0, 0, w, h);
+        for (let i = 0; i < w * h; i++) {
+          if (mask[i]) continue;
+          shown.data[i * 4] *= 0.3;
+          shown.data[i * 4 + 1] *= 0.3;
+          shown.data[i * 4 + 2] *= 0.3;
+        }
+        g.putImageData(shown, 0, 0);
+
+        if (outline.length) {
+          g.strokeStyle = '#ff7a18';
+          g.fillStyle = '#ff7a18';
+          g.lineWidth = 2;
+          g.beginPath();
+          outline.forEach(([x, y], i) => (i ? g.lineTo(x, y) : g.moveTo(x, y)));
+          if (outline.length >= 3) g.closePath();
+          g.stroke();
+          for (const [x, y] of outline) { g.beginPath(); g.arc(x, y, 3, 0, Math.PI * 2); g.fill(); }
+        }
+      }
+
+      function drawPreview(b) {
+        const g = preview.getContext('2d');
+        const size = preview.width;
+        g.fillStyle = '#ff7a18';
+        g.fillRect(0, 0, size, size);
+        if (!b) return;
+        const step = (size * 0.9) / Math.max(b.cols, b.rows);
+        const ox = (size - b.cols * step) / 2;
+        const oy = (size - b.rows * step) / 2;
+        for (let i = 0; i < b.bytes.length; i += 5) {
+          const x = ox + (b.bytes[i] + 0.5) * step;
+          const y = oy + (b.bytes[i + 1] + 0.5) * step;
+          const v = Math.round(30 + (b.bytes[i + 3] / 255) * 210);
+          g.fillStyle = `rgb(${v},${v},${v})`;
+          g.beginPath();
+          g.arc(x, y, step * 0.55, 0, Math.PI * 2);
+          g.fill();
+        }
+      }
+
+      function run() {
+        $('tolOut').value = $('tol').value;
+        $('rowsOut').value = $('rows').value;
+        if (!pic) return;
+        const mask = cutOut();
+        drawSource(mask);
+        const b = bake(mask);
+        baked = b ? { ...b, text: write(b) } : null;
+        drawPreview(b);
+        $('stats').textContent = b
+          ? `${b.count.toLocaleString()} spheres on a ${b.cols} × ${b.rows} grid.`
+          : 'Nothing left of the picture: lower the tolerance or redraw the outline.';
+        $('download').disabled = !b;
+      }
+
+      $('download').addEventListener('click', () => {
+        if (!baked) return;
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(new Blob([baked.text], { type: 'text/javascript' }));
+        a.download = 'cat-data.js';
+        a.click();
+        setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+      });
+
+      // For scripted use: an outline in the picture's own pixels, and the finished file.
+      window.bake = {
+        setOutline(points) {
+          outline = points.map(([x, y]) => [x * pic.scale, y * pic.scale]);
+          run();
+        },
+        set(id, value) { $(id).value = value; run(); },
+        output: () => (baked ? baked.text : null),
+        stats: () => (baked ? { count: baked.count, cols: baked.cols, rows: baked.rows } : null),
+      };
+    })();
+  </script>
+</body>
+</html>
