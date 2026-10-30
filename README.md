@@ -2,7 +2,7 @@
 
 [Live demo](https://ducquyen3.github.io/quyenduc3-spatial-worlds/)
 
-[![The glowing sphere cat in front of the SPATIAL WORLDS title](preview.jpg)](https://ducquyen3.github.io/quyenduc3-spatial-worlds/)
+[![The glowing sphere cat in front of the SPATIAL WORLDS title](preview-quyenduc3.jpg)](https://ducquyen3.github.io/quyenduc3-spatial-worlds/)
 
 A scroll-driven 3D hero section. About 7,000 glowing spheres gather into a cat when the page loads, and as you scroll the cat breaks apart and re-forms as a ringed planet.
 
