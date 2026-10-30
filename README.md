@@ -1,5 +1,9 @@
 # NEXFORM: Spatial Worlds
 
+[Live demo](https://ducquyen3.github.io/nexform-spatial-worlds/)
+
+[![The glowing sphere cat in front of the SPATIAL WORLDS title](preview.jpg)](https://ducquyen3.github.io/nexform-spatial-worlds/)
+
 A scroll-driven 3D hero section. About 7,000 glowing spheres gather into a cat when the page loads, and as you scroll the cat breaks apart and re-forms as a ringed planet.
 
 Built with Three.js and plain HTML, CSS and JavaScript. There is no build step.
@@ -29,4 +33,4 @@ The cat comes from an AI-generated image. `tools/bake-cat.html` removes the back
 
 ## Running it
 
-Open `index.html` in a browser. It also works straight from the file, without a local server. Three.js and the font load from CDNs, so you need an internet connection.
+Visit the [live demo](https://ducquyen3.github.io/nexform-spatial-worlds/), or open `index.html` in a browser. It also works straight from the file, without a local server. Three.js and the font load from CDNs, so you need an internet connection.
