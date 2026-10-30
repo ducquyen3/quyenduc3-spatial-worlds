@@ -1,4 +1,4 @@
-// Nexform hero: the cat behind the title, built from spheres that each glow like a bead of light, with a
+// Quyenduc3 hero: the cat behind the title, built from spheres that each glow like a bead of light, with a
 // wave running through its ring; scrolling breaks it apart and gathers it into a ringed world. A classic
 // script that imports three.js on the fly, so the page also works opened straight from disk.
 (() => {

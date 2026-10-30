@@ -1,4 +1,4 @@
-// Nexform hero: drives the scroll choreography, the scroll badge, the entrances and the menu.
+// Quyenduc3 hero: drives the scroll choreography, the scroll badge, the entrances and the menu.
 (() => {
   const root = document.documentElement;
   const reduce = matchMedia('(prefers-reduced-motion: reduce)');
